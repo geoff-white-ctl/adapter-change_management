@@ -69,7 +69,35 @@ function get(serviceNowTable, callback) {
     uri: `/api/now/table/${serviceNowTable}?sysparm_limit=1`,
   };
 
-  * @function post
+  // Send Request to ServiceNow.
+  // We are passing variable requestOptions for the first argument.
+  // We are passing an anonymous function, an error-first callback,
+  // for the second argument.
+  request(requestOptions, (error, response, body) => {
+    /**
+     * Process ServiceNow error, response and body.
+     * Check error and response code to make sure
+     * response is good.
+     */
+    if (error) {
+      console.error('Error present.');
+      callbackError = error;
+    } else if (!validResponseRegex.test(response.statusCode)) {
+      console.error('Bad response code.');
+      callbackError = response;
+    } else if (response.body.includes('Instance Hibernating page')) {
+      callbackError = 'Service Now instance is hibernating';
+      console.error(callbackError);
+    } else {
+      callbackData = response;
+    }
+    return callback(callbackData, callbackError);
+  });
+
+}
+
+/**
+ * @function get
  * @description Call the ServiceNow GET API.
  *
  * @param {string} serviceNowTable - The table target of the ServiceNow table API.
