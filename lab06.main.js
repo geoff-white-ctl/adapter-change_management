@@ -102,7 +102,7 @@ healthcheck(callback) {
     * the blocks for each branch.
     */
    if (error) {
-     log.error( 'Error encountered during healthcheck for service now instance: ${this.id}' );
+     log.error( 'Error encountered during healthcheck for service now instance: ' + this.id );
      this.emitOffline( );
      if( callback != null ) {
          callback( null, error );
@@ -125,7 +125,7 @@ healthcheck(callback) {
    */
   emitOffline() {
     this.emitStatus('OFFLINE');
-    log.warn('ServiceNow: Instance is unavailable. Instance: ${this.id}');
+    log.warn('ServiceNow: Instance is unavailable.');
   }
 
   /**
@@ -137,7 +137,7 @@ healthcheck(callback) {
    */
   emitOnline() {
     this.emitStatus('ONLINE');
-    log.info('ServiceNow: Instance is available. Instance: ${this.id}');
+    log.info('ServiceNow: Instance is available.');
   }
 
   /**
@@ -163,13 +163,7 @@ healthcheck(callback) {
    *   handles the response.
    */
   getRecord(callback) {
-   this.connector.get( (data, error) => {
-    if (error) {
-        callback( null, error );
-    } else {
-        callback( this.convertServiceNowListResponse( data ), error );
-    } 
-  });
+   this.connector.get( callback );
   }
 
   /**
@@ -182,83 +176,8 @@ healthcheck(callback) {
    *   handles the response.
    */
   postRecord(callback) {
-   this.connector.post( (data, error) => {
-    if (error) {
-        callback( null, error );
-    } else {
-      callback( this.convertServiceNowSingleItemResponse( data ), error );
-    } 
-  });
+   this.connector.post( callback );
   }
-
-/**
- * @memberof ServiceNowAdapter
- * @method convertServiceNowSingleItemResponse
- * @description Takes the full service now change request response object and converts it to our internal represenation
- * of change request, a subset of the fields with some renamed.
- *   
- * @param {object} response - The service now response object.  It is assumed that there is an attribute called
- * 'result' that contains escaped json that has a result property containing the newly create change request object.
- *
- * @return {object} convertedRequest - The new change request returned by the service now endpoint converted
- * to our internal representation.
- */
-  convertServiceNowSingleItemResponse( response ) {
-      if( response.body ) {
-          let parsedBody = JSON.parse( response.body );
-          return this.convertServiceNowTicket( parsedBody.result );
-      }
-      return null;
-  }
-
-/**
- * @memberof ServiceNowAdapter
- * @method convertServiceNowListResponse
- * @description Takes the full service now change request response object and converts it to our internal represenation
- * of change request, a subset of the fields with some renamed.
- *   
- * @param {object} response - The service now response object.  It is assumed that there is an attribute called
- * 'result' that contains escaped json that has an array property called result containing change request items
- *
- * @return {array[object]} convertedRequests - The change requests returned by the service now endpoint converted
- * to our internal representation.
- */
-  convertServiceNowListResponse( response ) {
-      let converted = [ ];
-      if( response.body ) {
-          let parsedBody = JSON.parse( response.body );
-          if( parsedBody.result ) {
-              for( var i = 0; i < parsedBody.result.length; i++ ) {
-                  converted.push( this.convertServiceNowTicket( parsedBody.result[i] ) );
-              }
-          }
-      }
-      return converted;
-  }
-
-
-/**
- * @memberof ServiceNowAdapter
- * @method convertServiceNowTicket
- * @description Takes the full service now change request object and converts it to our internal represenation
- * of change request, a subset of the fields with some renamed.
- *   
- * @param {object} serviceNowTicket - The service now ticket object
- *
- * @return {object} convertedTicket - The ticket converted into our internal representation.
- */
- convertServiceNowTicket( ticket ) {
-      return {
-        "change_ticket_number": ticket.number,
-        "active": ticket.active,
-        "priority": ticket.priority,
-        "description": ticket.description,
-        "work_start": ticket.work_start,
-        "work_end": ticket.work_end,
-        "change_ticket_key": ticket.sys_id
-      };
-  }
-
 }
 
 module.exports = ServiceNowAdapter;
